@@ -1,5 +1,5 @@
 // MS PUBLICATION — dashboard
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let channels = [];
 let selectedChannelId = null;
@@ -47,7 +47,7 @@ async function boot() {
 }
 
 async function loadChannels() {
-  const { data, error } = await supabase.from('channels').select('*').order('created_at');
+  const { data, error } = await supabaseClient.from('channels').select('*').order('created_at');
   if (error) { setTicker('Erreur de connexion à la base'); return; }
   channels = data || [];
 }
@@ -95,10 +95,10 @@ async function renderChannelPanel(id) {
   document.getElementById('empty-state').classList.add('hidden');
 
   const [{ data: pubs }, { data: stats }, { data: music }, { data: images }] = await Promise.all([
-    supabase.from('publications').select('*').eq('channel_id', id).order('published_at', { ascending: false }).limit(10),
-    supabase.from('stats_weekly').select('*').eq('channel_id', id).order('week_start', { ascending: false }).limit(1),
-    supabase.from('music_tracks').select('*').eq('channel_id', id),
-    supabase.from('user_images').select('*').eq('channel_id', id)
+    supabaseClient.from('publications').select('*').eq('channel_id', id).order('published_at', { ascending: false }).limit(10),
+    supabaseClient.from('stats_weekly').select('*').eq('channel_id', id).order('week_start', { ascending: false }).limit(1),
+    supabaseClient.from('music_tracks').select('*').eq('channel_id', id),
+    supabaseClient.from('user_images').select('*').eq('channel_id', id)
   ]);
 
   const latestStat = (stats && stats[0]) || { subscribers: 0, subscribers_gained: 0, revenue_cents: 0 };
@@ -270,10 +270,10 @@ async function uploadFile(e, channelId, kind) {
   if (!file) return;
   const path = `${channelId}/${Date.now()}_${file.name}`;
   const bucket = kind === 'music' ? 'music' : 'images';
-  const { error } = await supabase.storage.from(bucket).upload(path, file);
+  const { error } = await supabaseClient.storage.from(bucket).upload(path, file);
   if (error) { alert("Échec de l'upload : " + error.message); return; }
   const table = kind === 'music' ? 'music_tracks' : 'user_images';
-  await supabase.from(table).insert({ channel_id: channelId, storage_path: path, label: file.name });
+  await supabaseClient.from(table).insert({ channel_id: channelId, storage_path: path, label: file.name });
   renderChannelPanel(channelId);
 }
 
@@ -324,9 +324,9 @@ document.getElementById('modal-save').addEventListener('click', async () => {
     return;
   }
   if (editingChannel) {
-    await supabase.from('channels').update(payload).eq('id', editingChannel.id);
+    await supabaseClient.from('channels').update(payload).eq('id', editingChannel.id);
   } else {
-    await supabase.from('channels').insert(payload);
+    await supabaseClient.from('channels').insert(payload);
   }
   closeModal();
   await loadChannels();
