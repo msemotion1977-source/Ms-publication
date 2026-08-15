@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ms Publication — Régie</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <div id="gate" class="gate">
+    <div class="gate-card">
+      <p class="eyebrow">Accès régie</p>
+      <h1>MS PUBLICATION</h1>
+      <input type="password" id="gate-password" placeholder="Mot de passe" autocomplete="current-password" />
+      <button id="gate-submit">Entrer</button>
+      <p class="gate-hint">Défini dans Netlify → Environment variables → DASHBOARD_PASSWORD</p>
+    </div>
+  </div>
+
+  <div id="app" class="app hidden">
+
+    <header class="topbar">
+      <div class="wordmark">
+        <span class="wordmark-main">MS PUBLICATION</span>
+        <span class="wordmark-sub">RÉGIE DE DIFFUSION</span>
+      </div>
+      <div class="ticker" id="ticker">
+        <span class="ticker-dot"></span>
+        <span id="ticker-text">Connexion à la régie…</span>
+      </div>
+      <button id="add-channel-btn" class="btn-accent">+ Nouvelle chaîne</button>
+    </header>
+
+    <div class="layout">
+
+      <aside class="rail">
+        <div class="rail-group">
+          <p class="rail-label">YouTube</p>
+          <div id="rail-youtube" class="rail-list"></div>
+        </div>
+        <div class="rail-group">
+          <p class="rail-label">TikTok</p>
+          <div id="rail-tiktok" class="rail-list"></div>
+        </div>
+      </aside>
+
+      <main class="main" id="main">
+        <div class="empty-state" id="empty-state">
+          <p class="empty-eyebrow">Aucune chaîne sélectionnée</p>
+          <p>Connecte une chaîne YouTube ou un compte TikTok pour ouvrir sa fiche de pilotage ici.</p>
+        </div>
+      </main>
+
+    </div>
+  </div>
+
+  <!-- Modale : ajout / édition de chaîne -->
+  <div id="channel-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h2 id="modal-title">Connecter une chaîne</h2>
+        <button class="modal-close" id="modal-close">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <label>Plateforme</label>
+        <div class="segmented" id="platform-segmented">
+          <button data-platform="youtube" class="seg-btn active">YouTube</button>
+          <button data-platform="tiktok" class="seg-btn">TikTok</button>
+        </div>
+
+        <label>Nom de la chaîne</label>
+        <input id="f-display_name" type="text" placeholder="Ex : Faits Divers Nuit" />
+
+        <label>Niche à exploiter</label>
+        <input id="f-niche" type="text" placeholder="Ex : faits divers insolites, quiz culture générale, horreur courte…" />
+
+        <label>Mot-clé gameplay de fond (Pixabay)</label>
+        <input id="f-gameplay_query" type="text" placeholder="Ex : minecraft parkour, subway surfers, gta freeride" />
+
+        <label class="checkbox-row">
+          <input type="checkbox" id="f-weekly_long_video" />
+          Publier une vidéo longue chaque semaine (YouTube uniquement)
+        </label>
+
+        <div id="youtube-connect-block">
+          <p class="modal-note">La connexion OAuth se fait après l'enregistrement de la fiche, via le bouton "Connecter à YouTube" qui apparaîtra sur la carte de la chaîne.</p>
+        </div>
+
+        <div id="tiktok-connect-block" class="hidden">
+          <p class="modal-note">⚠️ Tant que ton app TikTok n'a pas passé l'audit officiel, les vidéos publiées ici resteront privées (visibles seulement par toi) jusqu'à validation manuelle dans l'app TikTok.</p>
+        </div>
+      </div>
+
+      <div class="modal-foot">
+        <button id="modal-cancel" class="btn-ghost">Annuler</button>
+        <button id="modal-save" class="btn-accent">Enregistrer la fiche</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
