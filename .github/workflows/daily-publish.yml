@@ -1,0 +1,46 @@
+name: Publication quotidienne
+
+on:
+  schedule:
+    # 08:00 UTC chaque jour = 09:00 ou 10:00 en France selon l'heure d'été/hiver.
+    # Modifie cette valeur si tu veux une autre heure de publication.
+    - cron: '0 8 * * *'
+  workflow_dispatch:
+    inputs:
+      channel_id:
+        description: "ID d'une chaîne précise (laisser vide pour traiter toutes les chaînes actives)"
+        required: false
+        default: ''
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
+      - name: Installer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Installer les dépendances
+        run: pip install -r automation/requirements.txt
+
+      - name: Lancer la publication
+        working-directory: automation
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+          TIKTOK_CLIENT_KEY: ${{ secrets.TIKTOK_CLIENT_KEY }}
+          TIKTOK_CLIENT_SECRET: ${{ secrets.TIKTOK_CLIENT_SECRET }}
+          TARGET_CHANNEL_ID: ${{ github.event.inputs.channel_id }}
+        run: python main.py
