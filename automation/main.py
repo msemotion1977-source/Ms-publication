@@ -42,7 +42,7 @@ def process_channel(channel: dict):
     print("Script généré :", script_data["title"])
 
     # 2) Voix off
-    voice_path = os.path.join(run_dir, "voice.mp3")
+    voice_path = os.path.join(run_dir, "voice.wav")
     generate_voice(script_data["script"], voice_path)
 
     # 3) Fond gameplay
