@@ -78,7 +78,30 @@ function renderRailGroup(elId, list, color) {
   `).join('');
   el.querySelectorAll('.rail-item').forEach(item => {
     item.addEventListener('click', () => selectChannel(item.dataset.id));
+    item.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      confirmDeleteChannel(item.dataset.id);
+    });
   });
+}
+
+async function confirmDeleteChannel(id) {
+  const c = channels.find(ch => ch.id === id);
+  if (!c) return;
+  const ok = confirm(`Supprimer définitivement "${c.display_name}" du dashboard ?\n\nLa fiche, les musiques/images associées et l'historique seront supprimés. La chaîne YouTube/TikTok elle-même n'est pas affectée, seule sa connexion à cet outil l'est.`);
+  if (!ok) return;
+  await supabaseClient.from('channels').delete().eq('id', id);
+  if (selectedChannelId === id) {
+    selectedChannelId = null;
+    document.getElementById('main').innerHTML = `
+      <div class="empty-state">
+        <p class="empty-eyebrow">Aucune chaîne sélectionnée</p>
+        <p>Connecte une chaîne YouTube ou un compte TikTok pour ouvrir sa fiche de pilotage ici.</p>
+      </div>`;
+  }
+  await loadChannels();
+  renderRail();
+  setTicker('Chaîne supprimée');
 }
 
 async function selectChannel(id) {
@@ -211,8 +234,6 @@ function renderPipeline(todayPub, c) {
     { key: 'render', label: 'Montage' },
     { key: 'publish', label: c.platform === 'tiktok' && !c.tiktok_audited ? 'Publié (privé)' : 'Publié' },
   ];
-  // Sans job en cours détectable en direct depuis le navigateur, on déduit l'état
-  // à partir de la ligne "publications" du jour : soit rien (attente), soit terminé, soit échec.
   let stateIndex = -1;
   let blocked = false;
   if (todayPub) {
@@ -331,6 +352,9 @@ document.getElementById('modal-save').addEventListener('click', async () => {
   closeModal();
   await loadChannels();
   renderRail();
+  if (selectedChannelId) {
+    await renderChannelPanel(selectedChannelId);
+  }
   setTicker('Fiche enregistrée');
 });
 
