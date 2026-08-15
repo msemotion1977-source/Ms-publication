@@ -9,10 +9,9 @@ def fetch_gameplay_clip(query: str, output_path: str) -> str:
     """Cherche un clip correspondant au mot-clé de la chaîne sur Pixabay
     (libre de droits, aucune attribution requise, utilisable en monétisé)
     et le télécharge à output_path."""
-    resp = requests.get(PIXABAY_VIDEO_ENDPOINT, params={
+resp = requests.get(PIXABAY_VIDEO_ENDPOINT, params={
         "key": PIXABAY_API_KEY,
         "q": query,
-        "video_type": "film",
         "per_page": 30,
         "safesearch": "true",
     })
