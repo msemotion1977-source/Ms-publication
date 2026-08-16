@@ -8,6 +8,7 @@ SUPABASE_SERVICE_ROLE_KEY = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
 
 MISTRAL_API_KEY = os.environ["MISTRAL_API_KEY"]
 PIXABAY_API_KEY = os.environ["PIXABAY_API_KEY"]
+PEXELS_API_KEY = os.environ.get("PEXELS_API_KEY", "")  # optionnel : source de secours
 
 YOUTUBE_CLIENT_ID = os.environ["YOUTUBE_CLIENT_ID"]
 YOUTUBE_CLIENT_SECRET = os.environ["YOUTUBE_CLIENT_SECRET"]
