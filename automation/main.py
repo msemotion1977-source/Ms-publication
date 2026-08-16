@@ -8,7 +8,7 @@ from supabase import create_client
 from config import SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, WORKDIR
 from generate_script import generate_script
 from generate_voice import generate_voice
-from fetch_gameplay import fetch_gameplay_clip
+from fetch_gameplay import fetch_gameplay_clips, fetch_keyword_images
 from render_video import render_video
 from publish_youtube import publish_to_youtube
 from publish_tiktok import publish_to_tiktok
@@ -45,9 +45,8 @@ def process_channel(channel: dict):
     voice_path = os.path.join(run_dir, "voice.wav")
     generate_voice(script_data["script"], voice_path)
 
-    # 3) Fond gameplay
-    gameplay_path = os.path.join(run_dir, "gameplay.mp4")
-    fetch_gameplay_clip(channel["gameplay_query"], gameplay_path)
+    # 3) Fonds gameplay (plusieurs extraits, pour alterner les plans)
+    gameplay_paths = fetch_gameplay_clips(channel["gameplay_query"], count=4, output_dir=run_dir)
 
     # 4) Musique utilisateur (si fournie) — on en prend une au hasard parmi celles uploadées
     music_path = None
@@ -57,23 +56,28 @@ def process_channel(channel: dict):
         music_path = os.path.join(run_dir, "music.mp3")
         download_from_storage("music", chosen["storage_path"], music_path)
 
-    # 5) Images utilisateur (si fournies)
+    # 5) Images à insérer dans le montage : d'abord celles fournies par l'utilisateur,
+    # complétées par des images trouvées automatiquement à partir des mots-clés du script
     image_paths = []
     images = supabase.table("user_images").select("*").eq("channel_id", channel_id).execute().data
     for i, img in enumerate(images):
-        p = os.path.join(run_dir, f"image_{i}.jpg")
+        p = os.path.join(run_dir, f"user_image_{i}.jpg")
         download_from_storage("images", img["storage_path"], p)
         image_paths.append(p)
+
+    remaining_slots = max(0, 4 - len(image_paths))
+    if remaining_slots and script_data.get("visual_keywords"):
+        image_paths += fetch_keyword_images(script_data["visual_keywords"][:remaining_slots], run_dir)
 
     # 6) Montage
     output_path = os.path.join(run_dir, "final.mp4")
     render_video(
-        gameplay_path=gameplay_path,
+        gameplay_paths=gameplay_paths,
         voice_path=voice_path,
         script_text=script_data["script"],
         output_path=output_path,
         music_path=music_path,
-        image_paths=image_paths,
+        keyword_image_paths=image_paths,
     )
     print("Montage terminé :", output_path)
 
