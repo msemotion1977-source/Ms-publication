@@ -1,15 +1,13 @@
 import random
 import requests
-from config import PIXABAY_API_KEY
+from config import PIXABAY_API_KEY, PEXELS_API_KEY
 
 PIXABAY_VIDEO_ENDPOINT = "https://pixabay.com/api/videos/"
+PEXELS_VIDEO_ENDPOINT = "https://api.pexels.com/videos/search"
 
 
-def fetch_gameplay_clip(query: str, output_path: str) -> str:
-    """Cherche un clip correspondant au mot-clé de la chaîne sur Pixabay
-    (libre de droits, aucune attribution requise, utilisable en monétisé)
-    et le télécharge à output_path."""
-resp = requests.get(PIXABAY_VIDEO_ENDPOINT, params={
+def _try_pixabay(query: str):
+    resp = requests.get(PIXABAY_VIDEO_ENDPOINT, params={
         "key": PIXABAY_API_KEY,
         "q": query,
         "per_page": 30,
@@ -18,11 +16,38 @@ resp = requests.get(PIXABAY_VIDEO_ENDPOINT, params={
     resp.raise_for_status()
     hits = resp.json().get("hits", [])
     if not hits:
-        raise RuntimeError(f"Aucun clip Pixabay trouvé pour la requête : {query!r}")
-
+        return None
     chosen = random.choice(hits)
-    # "large" = meilleure qualité dispo gratuitement sur Pixabay
-    video_url = chosen["videos"].get("large", {}).get("url") or chosen["videos"]["medium"]["url"]
+    return chosen["videos"].get("large", {}).get("url") or chosen["videos"]["medium"]["url"]
+
+
+def _try_pexels(query: str):
+    if not PEXELS_API_KEY:
+        return None
+    resp = requests.get(PEXELS_VIDEO_ENDPOINT, params={
+        "query": query,
+        "per_page": 30,
+        "orientation": "portrait",
+    }, headers={"Authorization": PEXELS_API_KEY})
+    resp.raise_for_status()
+    videos = resp.json().get("videos", [])
+    if not videos:
+        return None
+    chosen = random.choice(videos)
+    files = sorted(chosen.get("video_files", []), key=lambda f: f.get("width", 0), reverse=True)
+    return files[0]["link"] if files else None
+
+
+def fetch_gameplay_clip(query: str, output_path: str) -> str:
+    """Cherche un clip correspondant au mot-clé de la chaîne, en essayant
+    plusieurs bibliothèques libres de droits l'une après l'autre (Pixabay
+    puis Pexels en secours) pour élargir les chances de trouver un résultat."""
+    video_url = _try_pixabay(query) or _try_pexels(query)
+    if not video_url:
+        raise RuntimeError(
+            f"Aucun clip trouvé pour {query!r} sur Pixabay ni Pexels. "
+            f"Essaie un mot-clé plus générique (ex: 'gaming' au lieu du nom exact du jeu)."
+        )
 
     with requests.get(video_url, stream=True) as r:
         r.raise_for_status()
