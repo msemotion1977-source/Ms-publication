@@ -21,7 +21,8 @@ Réponds UNIQUEMENT en JSON valide, sans texte autour, avec ce format exact :
   "hook": "la toute première phrase, celle qui doit accrocher en 2 secondes",
   "script": "le texte complet à lire par la voix off, hook inclus",
   "title": "titre court pour la vidéo (moins de 90 caractères)",
-  "caption": "légende courte pour la description, avec 3 à 5 hashtags pertinents à la niche"
+  "caption": "légende courte pour la description, avec 3 à 5 hashtags pertinents à la niche",
+  "visual_keywords": ["3 à 5 mots-clés EN ANGLAIS, un ou deux mots chacun, décrivant des images concrètes évoquées par le texte (ex: 'nuclear explosion', 'ancient rome', 'computer chip') — utilisés pour illustrer la vidéo avec des photos, donc reste concret et visuel, pas abstrait"]
 }}
 """
 
