@@ -117,11 +117,12 @@ async function renderChannelPanel(id) {
   const main = document.getElementById('main');
   document.getElementById('empty-state').classList.add('hidden');
 
-  const [{ data: pubs }, { data: stats }, { data: music }, { data: images }] = await Promise.all([
+  const [{ data: pubs }, { data: stats }, { data: music }, { data: images }, { data: gameplay }] = await Promise.all([
     supabaseClient.from('publications').select('*').eq('channel_id', id).order('published_at', { ascending: false }).limit(10),
     supabaseClient.from('stats_weekly').select('*').eq('channel_id', id).order('week_start', { ascending: false }).limit(1),
     supabaseClient.from('music_tracks').select('*').eq('channel_id', id),
-    supabaseClient.from('user_images').select('*').eq('channel_id', id)
+    supabaseClient.from('user_images').select('*').eq('channel_id', id),
+    supabaseClient.from('gameplay_clips').select('*').eq('channel_id', id)
   ]);
 
   const latestStat = (stats && stats[0]) || { subscribers: 0, subscribers_gained: 0, revenue_cents: 0 };
@@ -184,6 +185,18 @@ async function renderChannelPanel(id) {
     </div>
 
     <div class="section-block">
+      <h3>Clips gameplay perso (${(gameplay || []).length})</h3>
+      <p style="color:var(--text-dim); font-size:12px; margin:-4px 0 12px;">
+        Priorité absolue sur la recherche automatique — dès qu'il y a au moins un clip ici, il est utilisé en fond à la place des banques génériques (bien plus adaptées pour ce type de contenu). Enregistre 3-4 courtes parties (2-5 min chacune) une fois, elles seront réutilisées à l'infini.
+      </p>
+      <div class="file-drop" id="gameplay-drop">Cliquer pour ajouter un clip vidéo (mp4)</div>
+      <input type="file" id="gameplay-input" accept="video/*" class="hidden" />
+      <div class="upload-list">
+        ${(gameplay || []).map(g => `<div class="upload-chip">🎮 ${escapeHtml(g.label || g.storage_path.split('/').pop())}</div>`).join('') || '<span style="color:var(--text-dim); font-size:12px;">Aucun clip perso — utilise pour l\'instant Pixabay/Pexels (résultats plus génériques).</span>'}
+      </div>
+    </div>
+
+    <div class="section-block">
       <h3>Musiques (${(music || []).length})</h3>
       <div class="file-drop" id="music-drop">Cliquer pour ajouter un fichier audio (mp3, wav)</div>
       <input type="file" id="music-input" accept="audio/*" class="hidden" />
@@ -225,6 +238,8 @@ async function renderChannelPanel(id) {
   document.getElementById('music-input').addEventListener('change', (e) => uploadFile(e, c.id, 'music'));
   document.getElementById('image-drop').addEventListener('click', () => document.getElementById('image-input').click());
   document.getElementById('image-input').addEventListener('change', (e) => uploadFile(e, c.id, 'images'));
+  document.getElementById('gameplay-drop').addEventListener('click', () => document.getElementById('gameplay-input').click());
+  document.getElementById('gameplay-input').addEventListener('change', (e) => uploadFile(e, c.id, 'gameplay'));
 }
 
 function renderPipeline(todayPub, c) {
@@ -290,10 +305,10 @@ async function uploadFile(e, channelId, kind) {
   const file = e.target.files[0];
   if (!file) return;
   const path = `${channelId}/${Date.now()}_${file.name}`;
-  const bucket = kind === 'music' ? 'music' : 'images';
+  const bucket = kind === 'music' ? 'music' : kind === 'gameplay' ? 'gameplay' : 'images';
   const { error } = await supabaseClient.storage.from(bucket).upload(path, file);
   if (error) { alert("Échec de l'upload : " + error.message); return; }
-  const table = kind === 'music' ? 'music_tracks' : 'user_images';
+  const table = kind === 'music' ? 'music_tracks' : kind === 'gameplay' ? 'gameplay_clips' : 'user_images';
   await supabaseClient.from(table).insert({ channel_id: channelId, storage_path: path, label: file.name });
   renderChannelPanel(channelId);
 }
