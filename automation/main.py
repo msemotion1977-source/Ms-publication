@@ -45,7 +45,7 @@ def process_channel(channel: dict):
     voice_path = os.path.join(run_dir, "voice.wav")
     generate_voice(script_data["script"], voice_path)
 
-    # 3) Fonds gameplay (plusieurs extraits, pour alterner les plans)
+    # 3) Fond gameplay (plusieurs extraits, pour alterner les plans)
     gameplay_paths = fetch_gameplay_clips(channel["gameplay_query"], count=4, output_dir=run_dir)
 
     # 4) Musique utilisateur (si fournie) — on en prend une au hasard parmi celles uploadées
