@@ -147,17 +147,26 @@ def render_video(
         filters.append(f"[{music_input_index}:a]aloop=loop=-1:size=2e9,volume=0.10[music]")
         audio_parts.append("[music]")
 
-    # Stings : un bruit blanc très court (whoosh) synthétisé à chaque cut, sans fichier externe
+# Stings : plusieurs sons différents (whoosh, swoosh descendant, pop, riser montant),
+    # tous synthétisés par ffmpeg — variés à chaque cut plutôt que toujours le même son
+    STING_RECIPES = [
+        ("anoisesrc=color=white:duration=0.18:sample_rate=44100",
+         "afade=t=in:st=0:d=0.02,afade=t=out:st=0.10:d=0.08,volume=0.16"),
+        ("aevalsrc=0.25*sin(2*PI*(900-650*t/0.22)*t):d=0.22:s=44100",
+         "afade=t=in:st=0:d=0.02,afade=t=out:st=0.14:d=0.08,volume=0.18"),
+        ("sine=frequency=1200:duration=0.09:sample_rate=44100",
+         "afade=t=out:st=0.02:d=0.07,volume=0.20"),
+        ("aevalsrc=0.2*sin(2*PI*(300+2200*t/0.14)*t):d=0.14:s=44100",
+         "afade=t=in:st=0:d=0.01,afade=t=out:st=0.09:d=0.05,volume=0.18"),
+    ]
     sting_labels = []
     for k, ts in enumerate(cut_timestamps):
+        source, post_filters = random.choice(STING_RECIPES)
         sting_index = input_index
-        inputs += ["-f", "lavfi", "-i", "anoisesrc=color=white:duration=0.18:sample_rate=44100"]
+        inputs += ["-f", "lavfi", "-i", source]
         input_index += 1
         delay_ms = int(ts * 1000)
-        filters.append(
-            f"[{sting_index}:a]afade=t=in:st=0:d=0.02,afade=t=out:st=0.10:d=0.08,"
-            f"volume=0.18,adelay={delay_ms}|{delay_ms}[sting{k}]"
-        )
+        filters.append(f"[{sting_index}:a]{post_filters},adelay={delay_ms}|{delay_ms}[sting{k}]")
         sting_labels.append(f"[sting{k}]")
         audio_parts.append(f"[sting{k}]")
 
