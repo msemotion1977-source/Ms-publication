@@ -45,8 +45,18 @@ def process_channel(channel: dict):
     voice_path = os.path.join(run_dir, "voice.wav")
     generate_voice(script_data["script"], voice_path)
 
-    # 3) Fond gameplay (plusieurs extraits, pour alterner les plans)
-    gameplay_paths = fetch_gameplay_clips(channel["gameplay_query"], count=4, output_dir=run_dir)
+# 3) Fonds gameplay : priorité aux clips perso uploadés (bien plus adaptés que
+    # les banques génériques pour ce type de contenu) ; sinon repli sur Pixabay/Pexels
+    user_clips = supabase.table("gameplay_clips").select("*").eq("channel_id", channel_id).execute().data
+    if user_clips:
+        gameplay_paths = []
+        for i in range(4):
+            chosen = random.choice(user_clips)
+            p = os.path.join(run_dir, f"user_gameplay_{i}.mp4")
+            download_from_storage("gameplay", chosen["storage_path"], p)
+            gameplay_paths.append(p)
+    else:
+        gameplay_paths = fetch_gameplay_clips(channel["gameplay_query"], count=4, output_dir=run_dir)
 
     # 4) Musique utilisateur (si fournie) — on en prend une au hasard parmi celles uploadées
     music_path = None
